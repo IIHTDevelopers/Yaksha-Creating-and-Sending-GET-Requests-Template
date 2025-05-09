@@ -36,45 +36,41 @@ public class ApiControllerTest {
 	public void testFetchDataFromApi() throws Exception {
 		String apiUrl = "https://jsonplaceholder.typicode.com/posts/1";
 
-		// Declare boolean flags to track each assertion result
 		boolean statusOk = false;
 		boolean containsUserId = false;
 		boolean containsId = false;
 		boolean containsTitle = false;
 
 		try {
-			// Perform the GET request to fetch data from the API
-			MvcResult result = mockMvc.perform(get("/fetchData").param("apiUrl", apiUrl)).andExpect(status().isOk()) // Check
-																														// if
-																														// the
-																														// status
-																														// is
-																														// OK
-																														// (200)
+			MvcResult result = mockMvc.perform(get("/fetchData").param("apiUrl", apiUrl))
 					.andReturn(); // Capture the result
 
+			int responseStatus = result.getResponse().getStatus();
+
 			// Check if the HTTP status is OK (200)
-			statusOk = result.getResponse().getStatus() == 200;
-
-			// Check if the response contains "userId"
-			containsUserId = result.getResponse().getContentAsString().contains("userId");
-
-			// Check if the response contains "id"
-			containsId = result.getResponse().getContentAsString().contains("id");
-
-			// Check if the response contains "title"
-			containsTitle = result.getResponse().getContentAsString().contains("title");
+			if (responseStatus == 200) {
+				statusOk = true;
+				String responseBody = result.getResponse().getContentAsString();
+				containsUserId = responseBody.contains("userId");
+				containsId = responseBody.contains("id");
+				containsTitle = responseBody.contains("title");
+			} else {
+				System.out.println("API request failed with status: " + responseStatus);
+			}
 
 		} catch (Exception ex) {
-			// If any exception occurs, we log it and ensure `yakshaAssert` is called with
-			// "false"
 			System.out.println("Error occurred: " + ex.getMessage());
+			yakshaAssert(currentTest(), "false", businessTestFile); // Ensure test fails if exception occurs
+			return; // Exit early to prevent further checks
 		}
 
-		// Combine all the results and pass them to yakshaAssert
 		boolean finalResult = statusOk && containsUserId && containsId && containsTitle;
 
-		// Use yakshaAssert to check if all assertions passed
+		// Assert test case result while handling failure scenario
+		if (!finalResult) {
+			System.out.println("Test case failed due to API response issues.");
+		}
+
 		yakshaAssert(currentTest(), finalResult ? "true" : "false", businessTestFile);
 	}
 
